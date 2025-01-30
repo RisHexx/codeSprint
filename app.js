@@ -1,7 +1,9 @@
+const path = require("path");
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User'); // Assuming you have the updated User model
+const Complaint = require('./models/Complaint'); // Assuming you have the updated User model
 const connectDB = require('./db/config');
 const { default: mongoose } = require('mongoose');
 const app = express();
@@ -9,6 +11,8 @@ const JWT_SECRET = 'your_jwt_secret'; // Change this to an environment variable
 
 app.use(express.json());
 
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "ejs");
 // Signup Route
 app.post('/signup', async (req, res) => {
     try {
@@ -67,6 +71,11 @@ const authenticateUser = (req, res, next) => {
         res.status(401).json({ msg: 'Token is not valid' });
     }
 };
+
+app.get('/home', async (req, res) => {
+  const problems = await Complaint.find().populate('postedBy', 'name'); // Fetch problems with user names
+  res.render('home', { problems });
+});
 
 mongoose.connect("mongodb://localhost:27017/codesprint")
 .then(() => {
