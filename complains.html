@@ -31,12 +31,20 @@
             }
 
             .right-column {
+                margin-top: 2rem;
+                flex-grow: 1;
+                flex-direction: column;
+                gap: 5rem; /* Adds space between the smaller containers */
+                margin-left: 30px; /* Add space on the left side of the right column */
+            }
+
+            .small {
                 margin-top: 5rem;
                 display: flex;
                 flex-grow: 1;
                 flex-direction: column;
                 gap: 5rem; /* Adds space between the smaller containers */
-                margin-left: 30px; /* Add space on the left side of the right column */
+                margin-left: 30px;
             }
 
             .dropdown-container {
@@ -52,6 +60,18 @@
             }
             .entire {
                 margin-bottom: 10rem;
+                margin-top: 2rem;
+            }
+            .regComp {
+            /* Your button styles */
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+
             }
         </style>
     </head>
@@ -73,30 +93,10 @@
         </nav>
     </div>
 
-    <!-- Dropdown Container -->
-    <div class="dropdown-container">
-        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Dropdown button
-        </button>
-        <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Action</a></li>
-            <li><a class="dropdown-item" href="#">Another action</a></li>
-            <li><a class="dropdown-item" href="#">Something else here</a></li>
-        </ul>
-        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Dropdown button
-        </button>
-        <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Action</a></li>
-            <li><a class="dropdown-item" href="#">Another action</a></li>
-            <li><a class="dropdown-item" href="#">Something else here</a></li>
-        </ul>
-    </div>
-
     <!-- Main Container -->
     <div class="container-fluid full-height-container ">
         <!-- Main Content Container with Flexbox Layout -->
-        <div class="d-flex-custom entire">
+        <div class="d-flex-custom entire" >
           
             <!-- Main Content (Left side) -->
             <div class="flex-grow-1 main-container border border-dark p-3">
@@ -107,17 +107,17 @@
             <!-- Right Side Containers (Stacked below one another) -->
             <div class="right-column">
                 <!-- First Smaller Container -->
-                <div class="border border-dark p-3 above">
+                <div class="border border-dark p-3 above small" >
                     <h4>Left Container</h4>
                     <p>This is the left smaller container.</p>
                 </div>
         
                 <!-- Second Smaller Container -->
-                <div class="border border-dark p-3 below">
-                    <h4>Right Container</h4>
-                    <p>This is the right smaller container.</p>
+        
+                <div class="d-flex justify-content-center mt-3">
+                    <button class="btn btn-primary">Register Complaint</button>
                 </div>
-            </div>
+                </div>
         </div>
     </div>
     
