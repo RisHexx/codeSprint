@@ -6,7 +6,8 @@ const User = require('./models/User'); // Assuming you have the updated User mod
 const { default: mongoose } = require('mongoose');
 const app = express();
 const JWT_SECRET = 'your_jwt_secret'; // Change this to an environment variable
-const cookieParser = require('cookie-parser');
+const cookieParser = require('cookie-parser');  
+app.use(express.urlencoded({ extended: true }));
 const Complaint = require('./models/Complaint')
 
 app.use(express.json());
@@ -15,55 +16,86 @@ app.use(cookieParser());
 // Set EJS as the view engine
 app.set('view engine', 'ejs');
 app.set('views', './views'); // Optional, default is './views'
-// Signup Route
-app.post('/signup', async (req, res) => {
-    try {
-        const { name, email, password, age, gender, address, aadharCard } = req.body;
 
-        // Check if the user already exists using aadharCard
-        let user = await User.findOne({ aadharCard });
-        if (user) return res.status(400).json({ msg: 'User with this Aadhar Card already exists' });
 
-        // Hash password before saving
-        const hashedPassword = await bcrypt.hash(password, 10);
+app.get('/signup',(req,res)=>{
+  res.render('signup.ejs')
+})
+app.post("/signup", async (req, res) => {
+  try {
+    const { name, email, password, age, gender, address, aadharCard } =
+      req.body;
 
-        // Create a new user
-        user = new User({ name, email, password: hashedPassword, age, gender, address, aadharCard });
-        await user.save();
+    // Check if the user already exists using aadharCard
+    let user = await User.findOne({ aadharCard });
+    if (user)
+      return res
+        .status(400)
+        .json({ msg: "User with this Aadhar Card already exists" });
 
-        // Create a JWT token
-        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
-        res.json({ token, user: { id: user._id, name, email, aadharCard } });
-    } catch (err) {
-        res.status(500).json({ msg: 'Server error' });
-    }
+    // Hash password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create a new user
+    user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      age,
+      gender,
+      address,
+      aadharCard,
+    });
+    await user.save();
+
+    // Create a JWT token
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
+    res.redirect("/home")
+  } catch (err) {
+    res.status(500).json({ msg: "Server error" });
+  }
 });
+
+app.get('/login',(req,res)=>{
+  res.render('login.ejs');
+})
+
+app.get('/register-complaint',(req,res)=>{
+  res.render('complaintForm.ejs')
+})
 
 // Login Route (using Aadhar Card for login)
-app.post('/login', async (req, res) => {
-    try {
-        const { aadharCard, password } = req.body;
+app.post("/login", async (req, res) => {
+  try {
+    const { aadharCard, password } = req.body;
 
-        // Find user by aadharCard
-        const user = await User.findOne({ aadharCard });
-        if (!user) return res.status(400).json({ msg: 'Invalid Aadhar Card or password' });
+    // Find user by aadharCard
+    const user = await User.findOne({ aadharCard });
+    if (!user)
+      return res.status(400).json({ msg: "Invalid Aadhar Card or password" });
 
-        // Compare password
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ msg: 'Invalid Aadhar Card or password' });
+    // Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch)
+      return res.status(400).json({ msg: "Invalid Aadhar Card or password" });
 
-        // Create a JWT token
-        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
+    // Create a JWT token
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
-        // Set the token in a cookie
-        res.cookie('auth_token', token);
+    // Set the token in a cookie
+    res.cookie("auth_token", token);
 
-        // Send response with token and user info
-        res.json({ token, user: { id: user._id, name: user.name, email: user.email, aadharCard: user.aadharCard } });
-    } catch (err) {
-        res.status(500).json({ msg: 'Server error' });
-    }
+    // Send response with token and user info
+    res.redirect('/home')
+  } catch (err) {
+    res.status(500).json({ msg: "Server error" });
+  }
 });
+
 
 // Middleware to check authentication
 const authenticateUser = (req, res, next) => {
@@ -99,6 +131,16 @@ app.get('/admin-home', authenticateUser, async (req, res) => {
     }
 });
 
+app.get('/home', async (req, res) => {
+  try {
+    const problems = await Complaint.find({})
+      .populate('postedBy', 'name')  // Populate the 'postedBy' field with the 'name' of the user
+    problems.map(problem => console.log(problem)); // Log each problem to check the populated data
+    res.render('home.ejs', { problems });
+  } catch (err) {
+    console.log(err);
+  }
+});
 
 // Register Complaint Route
 app.post('/register-complaint', authenticateUser, async (req, res) => {
