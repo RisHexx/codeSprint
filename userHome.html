@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>User Home</title>
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+        <style>
+            html, body {
+                height: 100%; /* Make the body take up the full height */
+                margin: 0; /* Remove default margin */
+            }
+
+            .full-height-container {
+                height: 100%; /* Ensure the container takes full height */
+                display: flex;
+                flex-direction: column; /* Stack elements vertically */
+            }
+
+            .main-container {
+                flex-grow: 1; /* Allow this container to take up the remaining space */
+                margin-bottom: 0; /* Remove bottom margin */
+                margin-right: 5px;
+            }
+
+            .d-flex-custom {
+                display: flex;
+                justify-content: space-between;
+                flex-grow: 1; /* Ensure the main content grows */
+            }
+
+            .right-column {
+                margin-top: 5rem;
+                display: flex;
+                flex-grow: 1;
+                flex-direction: column;
+                gap: 5rem; /* Adds space between the smaller containers */
+                margin-left: 30px; /* Add space on the left side of the right column */
+            }
+
+            .dropdown-container {
+                margin-left: 5px;
+                margin-bottom: 1rem;
+            }
+
+            .above {
+                border-radius: 10px;
+            }
+            .below {
+                border-radius: 10px;
+            }
+            .entire {
+                margin-bottom: 10rem;
+                margin-top: 2rem;
+            }
+        </style>
+    </head>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <body>
+    <div>
+        <!-- Navbar -->
+        <nav class="navbar bg-body-tertiary">
+            <div class="container-fluid">
+                <span class="navbar-brand mb-0 h1">Navbar</span>
+    
+                <!-- Right-Aligned Button -->
+                <div class="ms-auto">
+                    <button class="btn btn-primary">Complain</button>
+                    <button class="btn btn-primary">Sign In</button>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Dropdown Container -->
+
+    <!-- Main Container -->
+    <div class="container-fluid full-height-container ">
+        <!-- Main Content Container with Flexbox Layout -->
+        <div class="d-flex-custom entire">
+          
+            <!-- Main Content (Left side) -->
+            <div class="flex-grow-1 main-container border border-dark p-3">
+                <h2>Main Content</h2>
+                <p>This is the content that will be inside the main container.</p>
+            </div>
+        
+            <!-- Right Side Containers (Stacked below one another) -->
+            <div class="right-column">
+                <!-- First Smaller Container -->
+                <div class="border border-dark p-3 above">
+                    <h4>Left Container</h4>
+                    <p>This is the left smaller container.</p>
+                </div>
+        
+                <!-- Second Smaller Container -->
+                <div class="border border-dark p-3 below">
+                    <h4>Right Container</h4>
+                    <p>This is the right smaller container.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+  </body>
+</html>
