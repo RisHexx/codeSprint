@@ -1,7 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const User = require('./models/User'); // Assuming you have a User model
+const User = require('./models/User'); // Assuming you have the updated User model
 const connectDB = require('./db/config');
 const { default: mongoose } = require('mongoose');
 const app = express();
@@ -12,35 +12,43 @@ app.use(express.json());
 // Signup Route
 app.post('/signup', async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const { name, email, password, age, gender, address, aadharCard } = req.body;
 
-        let user = await User.findOne({ email });
-        if (user) return res.status(400).json({ msg: 'User already exists' });
+        // Check if the user already exists using aadharCard
+        let user = await User.findOne({ aadharCard });
+        if (user) return res.status(400).json({ msg: 'User with this Aadhar Card already exists' });
 
+        // Hash password before saving
         const hashedPassword = await bcrypt.hash(password, 10);
-        user = new User({ username, email, password: hashedPassword });
+
+        // Create a new user
+        user = new User({ name, email, password: hashedPassword, age, gender, address, aadharCard });
         await user.save();
 
+        // Create a JWT token
         const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
-        res.json({ token, user: { id: user._id, username, email } });
+        res.json({ token, user: { id: user._id, name, email, aadharCard } });
     } catch (err) {
         res.status(500).json({ msg: 'Server error' });
     }
 });
 
-// Login Route
+// Login Route (using Aadhar Card for login)
 app.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { aadharCard, password } = req.body;
 
-        const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
+        // Find user by aadharCard
+        const user = await User.findOne({ aadharCard });
+        if (!user) return res.status(400).json({ msg: 'Invalid Aadhar Card or password' });
 
+        // Compare password
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
+        if (!isMatch) return res.status(400).json({ msg: 'Invalid Aadhar Card or password' });
 
+        // Create a JWT token
         const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
-        res.json({ token, user: { id: user._id, username: user.username, email } });
+        res.json({ token, user: { id: user._id, name: user.name, email: user.email, aadharCard: user.aadharCard } });
     } catch (err) {
         res.status(500).json({ msg: 'Server error' });
     }
@@ -61,10 +69,10 @@ const authenticateUser = (req, res, next) => {
 };
 
 mongoose.connect("mongodb://localhost:27017/codesprint")
-.then(()=>{
+.then(() => {
     console.log("Db Connected");
     
-    app.listen(3000,()=>{
-        console.log("Listening");
-    })
-})
+    app.listen(3000, () => {
+        console.log("Listening on port 3000");
+    });
+});
