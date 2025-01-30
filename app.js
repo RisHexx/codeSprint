@@ -2,7 +2,8 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User'); // Assuming you have a User model
-
+const connectDB = require('./db/config');
+const { default: mongoose } = require('mongoose');
 const app = express();
 const JWT_SECRET = 'your_jwt_secret'; // Change this to an environment variable
 
@@ -59,4 +60,11 @@ const authenticateUser = (req, res, next) => {
     }
 };
 
-module.exports = { app, authenticateUser };
+mongoose.connect("mongodb://localhost:27017/codesprint")
+.then(()=>{
+    console.log("Db Connected");
+    
+    app.listen(3000,()=>{
+        console.log("Listening");
+    })
+})
