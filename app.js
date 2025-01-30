@@ -3,16 +3,18 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User'); // Assuming you have the updated User model
-const Complaint = require('./models/Complaint'); // Assuming you have the updated User model
-const connectDB = require('./db/config');
 const { default: mongoose } = require('mongoose');
 const app = express();
 const JWT_SECRET = 'your_jwt_secret'; // Change this to an environment variable
+const cookieParser = require('cookie-parser');
+const Complaint = require('./models/Complaint')
 
 app.use(express.json());
-
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "ejs");
+app.use(express.static('public')); // For serving static files like images, CSS, JS
+app.use(cookieParser());
+// Set EJS as the view engine
+app.set('view engine', 'ejs');
+app.set('views', './views'); // Optional, default is './views'
 // Signup Route
 app.post('/signup', async (req, res) => {
     try {
@@ -52,6 +54,11 @@ app.post('/login', async (req, res) => {
 
         // Create a JWT token
         const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
+
+        // Set the token in a cookie
+        res.cookie('auth_token', token);
+
+        // Send response with token and user info
         res.json({ token, user: { id: user._id, name: user.name, email: user.email, aadharCard: user.aadharCard } });
     } catch (err) {
         res.status(500).json({ msg: 'Server error' });
@@ -60,22 +67,71 @@ app.post('/login', async (req, res) => {
 
 // Middleware to check authentication
 const authenticateUser = (req, res, next) => {
-    const token = req.header('Authorization');
-    if (!token) return res.status(401).json({ msg: 'No token, authorization denied' });
+    const token = req.cookies.auth_token; // Get token from the cookie
 
+    if (!token) {
+        return res.status(401).json({ msg: 'No token, authorization denied' });
+    }
     try {
-        const decoded = jwt.verify(token.replace('Bearer ', ''), JWT_SECRET);
-        req.body.user = decoded.userId; // Add user ID to request body
+        // Verify the token
+        const decoded = jwt.verify(token, JWT_SECRET);
+        // Attach user ID to the request body
+        req.body.user = decoded.userId;
+
+        // Proceed to the next middleware or route handler
         next();
     } catch (err) {
         res.status(401).json({ msg: 'Token is not valid' });
     }
 };
 
-app.get('/home', async (req, res) => {
-  const problems = await Complaint.find().populate('postedBy', 'name'); // Fetch problems with user names
-  res.render('home', { problems });
+
+
+// Admin Home Route (Display only pending complaints)
+app.get('/admin-home', authenticateUser, async (req, res) => {
+    try {
+        // Fetch all pending complaints
+        const complaints = await Complaint.find({ status: 'Pending' }).populate('user', 'name email');
+
+        res.render('admin-home.ejs', { complaints }); // Render the page with complaints
+    } catch (err) {
+        res.status(500).json({ msg: 'Server error' });
+    }
 });
+
+
+// Register Complaint Route
+app.post('/register-complaint', authenticateUser, async (req, res) => {
+    try {
+        const { title, description, image, location } = req.body;
+
+        // Check if all required fields are provided
+        if (!title || !description || !location) {
+            return res.status(400).json({ msg: 'Title, description, and location are required' });
+        }
+
+        const userId = req.body.user; // Extract user ID from the request body (from the authenticateUser middleware)
+
+        // Create a new complaint
+        const newComplaint = new Complaint({
+            user: userId,
+            title,
+            description,
+            image, // If an image URL is provided
+            location
+        });
+
+        // Save the complaint to the database
+        await newComplaint.save();
+
+        res.json({ msg: 'Complaint registered successfully', complaint: newComplaint });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ msg: 'Server error while registering the complaint' });
+    }
+});
+
+
 
 mongoose.connect("mongodb://localhost:27017/codesprint")
 .then(() => {
