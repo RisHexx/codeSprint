@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Home</title>
+</head>
+<body>
+    <h1>Admin Home</h1>
+
+    <h2>Pending Complaints</h2>
+    <ul>
+        <% complaints.forEach(complaint => { %>
+            <li>
+                <h3><%= complaint.title %></h3>
+                <p><%= complaint.description %></p>
+                <p><strong>Status:</strong> <%= complaint.status %></p>
+                <p><strong>Location:</strong> <%= complaint.location %></p>
+                <p><strong>Reported By:</strong> <%= complaint.user.name %> (Email: <%= complaint.user.email %>)</p>
+                <p><strong>Created At:</strong> <%= complaint.createdAt.toLocaleString() %></p>
+            </li>
+        <% }) %>
+    </ul>
+</body>
+</html>
