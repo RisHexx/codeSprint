@@ -1,0 +1,30 @@
+<h1>Dashboard</h1>
+<a href="/logout">Logout</a>
+
+<h2>Submit a Complaint</h2>
+<form action="/complaints" method="POST" enctype="multipart/form-data">
+    <input type="text" name="title" placeholder="Title" required />
+    <textarea name="description" placeholder="Description"></textarea>
+    <input type="text" name="location" placeholder="Location" required />
+    <input type="file" name="image" />
+    <button type="submit">Submit</button>
+</form>
+
+<h2>Complaints</h2>
+<% complaints.forEach(complaint => { %>
+    <div>
+        <h3><%= complaint.title %></h3>
+        <p><%= complaint.description %></p>
+        <p>Status: <%= complaint.status %></p>
+        <% if (user.role === "admin") { %>
+            <form action="/complaints/<%= complaint._id %>/update" method="POST">
+                <select name="status">
+                    <option>Pending</option>
+                    <option>In Progress</option>
+                    <option>Resolved</option>
+                </select>
+                <button type="submit">Update</button>
+            </form>
+        <% } %>
+    </div>
+<% }); %>
