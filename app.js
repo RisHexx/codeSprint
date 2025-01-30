@@ -4,6 +4,8 @@ const bcrypt = require("bcryptjs");
 const User = require("./models/User"); // Assuming you have the updated User model
 const { default: mongoose } = require("mongoose");
 const app = express();
+const multer = require('multer');
+const path = require('path');
 const JWT_SECRET = "your_jwt_secret"; // Change this to an environment variable
 const cookieParser = require("cookie-parser");
 const Complaint = require("./models/Complaint");
@@ -12,6 +14,19 @@ app.use(express.json());
 app.use(express.static("public")); // For serving static files like images, CSS, JS
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
+
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'uploads/'); // Store images in 'uploads' directory
+    },
+    filename: (req, file, cb) => {
+      cb(null, Date.now() + path.extname(file.originalname)); // Append timestamp to filenames
+    },
+  });
+  
+  const upload = multer({ storage: storage });
+
 // Set EJS as the view engine
 app.set("view engine", "ejs");
 app.set("views", "./views"); // Optional, default is './views'
@@ -21,6 +36,9 @@ app.set("views", "./views"); // Optional, default is './views'
 
 app.get('/login', (req, res) => {
     res.render('login.ejs'); // Render the "signin" EJS page
+  });
+app.get('/complainform', (req, res) => {
+    res.render('complainForm.ejs'); // Render the "signin" EJS page
   });
   
 app.post("/signup", async (req, res) => {
@@ -132,44 +150,57 @@ app.get("/admin-home", authenticateUser, async (req, res) => {
     res.status(500).json({ msg: "Server error" });
   }
 });
+app.get('/register-complaint',(req,res)=>{
+    res.render("complainForm.ejs")
+})
 
-// Register Complaint Route
-app.post("/register-complaint", authenticateUser, async (req, res) => {
-  try {
-    const { title, description, image, location } = req.body;
-
-    // Check if all required fields are provided
-    if (!title || !description || !location) {
-      return res
-        .status(400)
-        .json({ msg: "Title, description, and location are required" });
+// POST route to register a complaint
+app.post("/register-complaint", authenticateUser, upload.single('image'), async (req, res) => {
+    try {
+      const { title, description, location } = req.body;
+      let image = null;
+  
+      // If an image is uploaded, assign its filename
+      if (req.file) {
+        image = req.file.filename;
+      }
+  
+      // Check if all required fields are provided
+      if (!title || !description || !location) {
+        return res.status(400).json({ msg: "Title, description, and location are required" });
+      }
+  
+      const userId = req.body.user; // Getting user id from authenticated request
+  
+      // Create a new complaint object
+      const newComplaint = new Complaint({
+        user: userId,
+        title,
+        description,
+        image, // Store the filename of the uploaded image
+        location,
+      });
+  
+      // Save the complaint to the database
+      await newComplaint.save();
+  
+      // Respond with a success message and the new complaint details
+      res.json({
+        msg: "Complaint registered successfully",
+        complaint: newComplaint,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ msg: "Server error while registering the complaint" });
     }
+  });
+  
 
-    const userId = req.body.user; // Extract user ID from the request body (from the authenticateUser middleware)
 
-    // Create a new complaint
-    const newComplaint = new Complaint({
-      user: userId,
-      title,
-      description,
-      image, // If an image URL is provided
-      location,
-    });
 
-    // Save the complaint to the database
-    await newComplaint.save();
-
-    res.json({
-      msg: "Complaint registered successfully",
-      complaint: newComplaint,
-    });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ msg: "Server error while registering the complaint" });
-  }
-});
+app.get("/",(req,res)=>{
+    res.render("dashboard.ejs")
+})
 
 mongoose.connect("mongodb://localhost:27017/codesprint").then(() => {
   console.log("Db Connected");
