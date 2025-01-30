@@ -1,29 +1,62 @@
-const express = require("express");
-const session = require("express-session");
-const mongoose = require("mongoose");
-const connectDB = require("./config/db");
-const authRoutes = require("./routes/authRoutes");
-const complaintRoutes = require("./routes/complaintRoutes");
-const Complaint = require("./models/Complaint");
+const express = require('express');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const User = require('./models/User'); // Assuming you have a User model
 
-require("dotenv").config();
 const app = express();
+const JWT_SECRET = 'your_jwt_secret'; // Change this to an environment variable
 
-connectDB();
+app.use(express.json());
 
-app.set("view engine", "ejs");
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static("public"));
+// Signup Route
+app.post('/signup', async (req, res) => {
+    try {
+        const { username, email, password } = req.body;
 
-app.use(session({ secret: "secret", resave: false, saveUninitialized: true }));
+        let user = await User.findOne({ email });
+        if (user) return res.status(400).json({ msg: 'User already exists' });
 
-app.use(authRoutes);
-app.use(complaintRoutes);
+        const hashedPassword = await bcrypt.hash(password, 10);
+        user = new User({ username, email, password: hashedPassword });
+        await user.save();
 
-app.get("/dashboard", async (req, res) => {
-    if (!req.session.user) return res.redirect("/login");
-    const complaints = await Complaint.find();
-    res.render("dashboard", { user: req.session.user, complaints });
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
+        res.json({ token, user: { id: user._id, username, email } });
+    } catch (err) {
+        res.status(500).json({ msg: 'Server error' });
+    }
 });
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+// Login Route
+app.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
+
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
+        res.json({ token, user: { id: user._id, username: user.username, email } });
+    } catch (err) {
+        res.status(500).json({ msg: 'Server error' });
+    }
+});
+
+// Middleware to check authentication
+const authenticateUser = (req, res, next) => {
+    const token = req.header('Authorization');
+    if (!token) return res.status(401).json({ msg: 'No token, authorization denied' });
+
+    try {
+        const decoded = jwt.verify(token.replace('Bearer ', ''), JWT_SECRET);
+        req.body.user = decoded.userId; // Add user ID to request body
+        next();
+    } catch (err) {
+        res.status(401).json({ msg: 'Token is not valid' });
+    }
+};
+
+module.exports = { app, authenticateUser };
